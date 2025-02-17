@@ -1,11 +1,5 @@
 #pragma once
-#include <map>
-#include "SFML/Graphics.hpp"
-#include "Vec2.h"
-
-#include <iostream>
-#include <string>
-
+#include "Assets.h"
 
 class Scene;
 
@@ -18,6 +12,7 @@ class GameEngine
 
 	Scenes					m_scenes;
 	sf::RenderWindow		m_window;
+	Assets					m_assets;
 	std::string				m_currentScene;
 	size_t					m_simulationSpeed = 1;
 	bool					m_running = true;
@@ -28,6 +23,8 @@ class GameEngine
 	void init(const std::string&);
 	const std::shared_ptr<Scene>& currentScene();
 	void update();
+
+	Assets& getAssets();
 	void changeScene(const std::string&, std::shared_ptr<Scene>);
 
 	void sUserInput();

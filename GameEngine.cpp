@@ -1,6 +1,8 @@
 #include "GameEngine.h"
 #include "Scene.h"
 #include "ScenePlay.h"
+#include <fstream>
+#include <sstream>
 
 GameEngine::GameEngine()
 {
@@ -10,6 +12,43 @@ GameEngine::GameEngine()
 
 void GameEngine::init(const std::string& path)
 {
+    std::ifstream myFiles(path);
+    if (!myFiles.is_open())
+    {
+        std::cerr << "Failed to open the file: " << path << std::endl;
+        return;
+    }
+
+    std::string line;
+    while (std::getline(myFiles, line))
+    {
+        if (line.empty())
+        {
+            continue;
+        }
+
+        std::istringstream lineStream(line);
+        std::string assetType, nameAsset, pathAsset;
+        size_t frameCount;
+        float animationSpeed;
+
+        if (lineStream >> assetType >> nameAsset >> pathAsset >> frameCount >> animationSpeed)
+        {
+            if (assetType == "Texture")
+            {
+                getAssets().addTexture(nameAsset, pathAsset);
+            }
+            else if (assetType == "Animation")
+            {
+                getAssets().addAnimations(nameAsset, Animation(nameAsset, getAssets().getTexture(pathAsset), frameCount, animationSpeed));
+            }
+        }
+        else
+        {
+            std::cerr << "Malformed line" << std::endl;
+        }
+    }
+
     m_window.create(sf::VideoMode::getDesktopMode(), "Image Tracing", sf::Style::Default);
     m_width = m_window.getSize().x;
     m_worldWidth = m_window.getSize().x;
@@ -70,6 +109,11 @@ void GameEngine::sUserInput()
 void GameEngine::update()
 {
     currentScene()->update();
+}
+
+Assets& GameEngine::getAssets()
+{
+    return m_assets;
 }
 
 void GameEngine::quit()
