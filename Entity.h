@@ -11,7 +11,9 @@ class EntityManager;
 typedef std::tuple<
 	CTransform,
 	CInput,
-	CShape
+	CShape,
+	CAnimation,
+	CBoundingBox
 > ComponentTuple;
 
 class Entity

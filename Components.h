@@ -76,3 +76,51 @@ public:
 		convex.setFillColor(sf::Color(color));
 	}
 };
+
+class CBoundingBox
+{
+public:
+	bool has = false;
+
+	Vec2 boundingbox = { 0.0f, 0.0f };
+	Vec2 halfSize = { 0.0f, 0.0f };
+	sf::Color boxColor;
+	sf::RectangleShape rectangle;
+
+	CBoundingBox()
+	{
+	}
+
+	CBoundingBox(const Vec2& bbox, const sf::Color& color = sf::Color::White, bool h = true)
+		: boundingbox(bbox)
+		, boxColor(color)
+		, has(h)
+		, halfSize(bbox / 2)
+	{
+		rectangle.setSize(sf::Vector2f(bbox.x, bbox.y));
+		rectangle.setFillColor(sf::Color::Transparent);
+		rectangle.setOutlineColor(sf::Color(boxColor));
+		rectangle.setOutlineThickness(1.0f);
+		rectangle.setOrigin(bbox.x / 2, bbox.y / 2);
+	}
+};
+
+class CAnimation
+{
+public:
+	bool has = false;
+	bool destroy = false;
+
+	Animation animation;
+
+	CAnimation()
+	{
+	}
+
+	CAnimation(const Animation anim, bool d, bool h = true)
+		: animation(anim)
+		, destroy(d)
+		, has(h)
+	{
+	}
+};

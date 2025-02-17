@@ -19,6 +19,9 @@ void ScenePlay::init()
 	enemySpawner(pos, sf::Color(192, 192, 192));
 	pos = { { 1350, 100 }, { 1700, 110 }, { 1870,390 }, { 1680, 400 }, { 1550, 350 } };
 	enemySpawner(pos, sf::Color(192, 192, 192));
+
+	auto target = m_entities.addEntity("target");
+	target->addComponent<CTransform>(Vec2(0, 0));
 }
 
 void ScenePlay::enemySpawner(std::vector<std::vector<int>> pos, const sf::Color& color)
