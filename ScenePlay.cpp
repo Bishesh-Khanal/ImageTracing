@@ -21,7 +21,9 @@ void ScenePlay::init()
 	enemySpawner(pos, sf::Color(192, 192, 192));
 
 	auto target = m_entities.addEntity("target");
-	target->addComponent<CTransform>(Vec2(0, 0));
+	target->addComponent<CAnimation>(m_game->getAssets().getAnimation("Pokemon"), false);
+	target->addComponent<CTransform>(Vec2(500, 500));
+	target->addComponent<CBoundingBox>(Vec2(target->getComponent<CAnimation>().animation.getSize().x, target->getComponent<CAnimation>().animation.getSize().y), sf::Color::Black);
 }
 
 void ScenePlay::enemySpawner(std::vector<std::vector<int>> pos, const sf::Color& color)
@@ -38,6 +40,19 @@ ScenePlay::ScenePlay(std::shared_ptr<GameEngine> game)
 	: Scene(std::move(game))
 {
 	init();
+}
+
+void ScenePlay::sAnimation()
+{
+
+	for (auto& entity : m_entities.getEntities("target"))
+	{
+		entity->getComponent<CAnimation>().animation.update();
+		if (entity->getComponent<CAnimation>().animation.hasEnded() && entity->getComponent<CAnimation>().destroy)
+		{
+			entity->destroy();
+		}
+	}
 }
 
 void ScenePlay::sDoAction(const Action& action)
@@ -58,6 +73,7 @@ void ScenePlay::sDoAction(const Action& action)
 
 void ScenePlay::update() {
 	m_entities.update();
+	sAnimation();
 }
 
 
@@ -77,7 +93,7 @@ ScenePlay::Intersect ScenePlay::intersection(const Vec2& a, const Vec2& b)
 
 	std::vector<Vec2> intersectionPoints(0);
 
-	for (auto& entity : m_entities.getEntities())
+	for (auto& entity : m_entities.getEntities("enemy"))
 	{
 		auto& shapeComponent = entity->getComponent<CShape>();
 		auto& convexShape = shapeComponent.convex;
@@ -152,7 +168,7 @@ void ScenePlay::sRender()
 
 	Vec2 mousePos(m_mShape.getPosition().x, m_mShape.getPosition().y);
 
-	for (auto& e : m_entities.getEntities())
+	for (auto& e : m_entities.getEntities("enemy"))
 	{
 		auto& shapeComponent = e->getComponent<CShape>();
 		auto& convexShape = shapeComponent.convex;
@@ -217,6 +233,12 @@ void ScenePlay::sRender()
 
 	m_mShape.setPosition(m_mPos.x, m_mPos.y);
 	m_game->m_window.draw(m_mShape);
+
+	for (auto& e : m_entities.getEntities("target"))
+	{
+		e->getComponent<CAnimation>().animation.m_sprite.setPosition(e->getComponent<CTransform>().pos.x, e->getComponent<CTransform>().pos.y);
+		m_game->m_window.draw(e->getComponent<CAnimation>().animation.m_sprite);
+	}
 
 	m_game->m_window.display();
 }

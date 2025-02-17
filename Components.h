@@ -2,6 +2,7 @@
 #include "Vec2.h"
 #include "SFML/Graphics.hpp"
 #include <cstdlib>
+#include "Animation.h"
 
 class Component
 {
@@ -77,11 +78,9 @@ public:
 	}
 };
 
-class CBoundingBox
+class CBoundingBox : public Component
 {
 public:
-	bool has = false;
-
 	Vec2 boundingbox = { 0.0f, 0.0f };
 	Vec2 halfSize = { 0.0f, 0.0f };
 	sf::Color boxColor;
@@ -94,9 +93,9 @@ public:
 	CBoundingBox(const Vec2& bbox, const sf::Color& color = sf::Color::White, bool h = true)
 		: boundingbox(bbox)
 		, boxColor(color)
-		, has(h)
 		, halfSize(bbox / 2)
 	{
+		has = h;
 		rectangle.setSize(sf::Vector2f(bbox.x, bbox.y));
 		rectangle.setFillColor(sf::Color::Transparent);
 		rectangle.setOutlineColor(sf::Color(boxColor));
@@ -105,7 +104,7 @@ public:
 	}
 };
 
-class CAnimation
+class CAnimation : public Component
 {
 public:
 	bool has = false;
@@ -120,7 +119,7 @@ public:
 	CAnimation(const Animation anim, bool d, bool h = true)
 		: animation(anim)
 		, destroy(d)
-		, has(h)
 	{
+		has = h;
 	}
 };

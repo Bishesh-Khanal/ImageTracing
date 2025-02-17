@@ -28,6 +28,8 @@ private:
 	void sRender()							override;
 	void sDoAction(const Action&)			override;
 
+	void sAnimation();
+
 	void enemySpawner(std::vector<std::vector<int>>, const sf::Color&);
 	Intersect intersection(const Vec2&, const Vec2&);
 	Vec2 increament(float, const Vec2&, const Vec2&);
