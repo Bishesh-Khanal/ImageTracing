@@ -21,11 +21,10 @@ void ScenePlay::init()
 	enemySpawner(pos, sf::Color(192, 192, 192));
 
 	target = m_entities.addEntity("target");
-	target->addComponent<CAnimation>(m_game->getAssets().getAnimation("Pokemon"), false);
+	target->addComponent<CAnimation>(m_game->getAssets().getAnimation("First"), false);
 	target->addComponent<CTransform>(Vec2(500, 600));
 	target->addComponent<CBoundingBox>(Vec2(target->getComponent<CAnimation>().animation.getSize().x, target->getComponent<CAnimation>().animation.getSize().y), sf::Color::Red);
 
-	target->getComponent<CAnimation>().animation.m_sprite.setPosition(target->getComponent<CTransform>().pos.x, target->getComponent<CTransform>().pos.y);
 	target->getComponent<CBoundingBox>().rectangle.setPosition(target->getComponent<CTransform>().pos.x, target->getComponent<CTransform>().pos.y);
 
 	auto& boundComponent = target->getComponent<CBoundingBox>();
@@ -54,11 +53,7 @@ ScenePlay::ScenePlay(std::shared_ptr<GameEngine> game)
 
 void ScenePlay::sAnimation()
 {
-
-	for (auto& entity : m_entities.getEntities("target"))
-	{
-		entity->getComponent<CAnimation>().animation.update(1);
-	}
+	target->getComponent<CAnimation>().animation.update(1);
 }
 
 void ScenePlay::sDoAction(const Action& action)
@@ -79,7 +74,7 @@ void ScenePlay::sDoAction(const Action& action)
 
 void ScenePlay::update() {
 	m_entities.update();
-	sAnimation();
+	//sAnimation();
 }
 
 
@@ -222,9 +217,29 @@ void ScenePlay::checkVerticesTarget(const Vec2& vertix)
 	}
 }
 
+sf::VertexArray ScenePlay::triangulate(std::vector<Vec2>& shape, std::vector<Vec2>& texCoords) {
+	sf::VertexArray triangles(sf::Triangles);
+
+	if (shape.size() < 3 || texCoords.size() < 3 || shape.size() != texCoords.size()) {
+		std::cerr << "Invalid shape or texture mapping!" << std::endl;
+		return triangles;
+	}
+
+	// Convert polygon into triangles (Assuming convex shape)
+	for (size_t i = 1; i < shape.size() - 1; i++) {
+		triangles.append(sf::Vertex(sf::Vector2f(shape[0].x, shape[0].y), sf::Vector2f(texCoords[0].x, texCoords[0].x))); // First vertex (anchor)
+		triangles.append(sf::Vertex(sf::Vector2f(shape[i].x, shape[i].y), sf::Vector2f(texCoords[i].x, texCoords[i].x))); // Current vertex
+		triangles.append(sf::Vertex(sf::Vector2f(shape[i+1].x, shape[i+1].y), sf::Vector2f(texCoords[i+1].x, texCoords[i+1].x))); // Next vertex
+	}
+
+	return triangles;
+}
+
 void ScenePlay::sRender()
 {
 	m_game->m_window.clear();
+
+	target->getComponent<CAnimation>().animation = m_game->getAssets().getAnimation("First");
 
 	Vec2 mousePos(m_mShape.getPosition().x, m_mShape.getPosition().y);
 
@@ -290,6 +305,7 @@ void ScenePlay::sRender()
 		m_game->m_window.draw(triangle);
 	}
 
+	target->getComponent<CAnimation>().animation.getSprite().setPosition(target->getComponent<CTransform>().pos.x, target->getComponent<CTransform>().pos.y);
 	m_game->m_window.draw(target->getComponent<CAnimation>().animation.m_sprite);
 	m_game->m_window.draw(target->getComponent<CBoundingBox>().rectangle);
 
@@ -298,8 +314,10 @@ void ScenePlay::sRender()
 	checkVerticesTarget(m_VerticesTarget[2]);
 	checkVerticesTarget(m_VerticesTarget[3]);
 
-	if(m_TexturePoints.size() != 0)
+	if (m_TexturePoints.size() > 2)
 	{
+		//target->getComponent<CAnimation>().animation = m_game->getAssets().getAnimation("Second");
+		//target->getComponent<CAnimation>().animation.update(0);
 		float min;
 		int temp = -1;
 		for (size_t i = 1; i < m_TexturePoints.size() - 1; i++)
@@ -330,6 +348,20 @@ void ScenePlay::sRender()
 			m_game->m_window.draw(pointIndicator);
 			i *= 1.5;
 		}
+
+		auto& boundComponent = target->getComponent<CBoundingBox>();
+		std::vector<Vec2> textureShape(m_TexturePoints.size());
+		for (int i = 0; i < m_TexturePoints.size(); i++)
+		{
+			textureShape[i] = Vec2(m_TexturePoints[i].x - (boundComponent.rectangle.getPosition().x - boundComponent.halfSize.x), m_TexturePoints[i].y - (boundComponent.rectangle.getPosition().y - boundComponent.halfSize.y));
+		}
+
+		sf::VertexArray triangles = triangulate(m_TexturePoints, textureShape);
+
+		sf::RenderStates states;
+		states.texture = target->getComponent<CAnimation>().animation.getSprite().getTexture();
+		m_game->m_window.draw(triangles, states);
+
 		m_TexturePoints.clear();
 	}
 

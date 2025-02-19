@@ -8,28 +8,33 @@ int main()
     
 
     /*
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Image Tracing");
+    sf::RenderWindow window(sf::VideoMode(800, 600), "Arbitrary Shape with Mapped Texture");
 
     // Load the texture
     sf::Texture texture;
-    if (!texture.loadFromFile("bin/Images/pokemon.png")) {
-        return -1; // Handle error
+    if (!texture.loadFromFile("bin/Images/pokemon2.png")) {
+        std::cerr << "Error: Could not load texture!" << std::endl;
+        return -1;
     }
+    texture.setSmooth(true);
 
-    // Create a vertex array with 4 vertices (Quad)
-    sf::VertexArray quad(sf::Quads, 4);
+    sf::Sprite sprite(texture);
+    Vec2 mSize(texture.getSize().x, texture.getSize().y);
+    sprite.setOrigin(mSize.x/2, mSize.y/ 2);
+    sprite.setPosition(400, 300);
 
-    // Define the quad vertices in world space (screen coordinates)
-    quad[0].position = sf::Vector2f(100, 100);  // Top-left
-    quad[1].position = sf::Vector2f(300, 120);  // Top-right
-    quad[2].position = sf::Vector2f(280, 300);  // Bottom-right
-    quad[3].position = sf::Vector2f(120, 280);  // Bottom-left
+    // Define an arbitrary shape in screen space
+    std::vector<sf::Vector2f> screenShape = {
+        {sprite.getPosition().x - mSize.x / 2, sprite.getPosition().y - mSize.y / 2}, {sprite.getPosition().x, sprite.getPosition().y - mSize.y / 2}, { sprite.getPosition().x + mSize.x / 2, sprite.getPosition().y }, { sprite.getPosition().x - mSize.x / 2, sprite.getPosition().y }  // 6 vertices
+    };
 
-    // Define texture coordinates (the part of the texture to be displayed)
-    quad[0].texCoords = sf::Vector2f(50, 50);   // Corresponding top-left texture coordinate
-    quad[1].texCoords = sf::Vector2f(200, 60);  // Top-right texture coordinate
-    quad[2].texCoords = sf::Vector2f(190, 200); // Bottom-right texture coordinate
-    quad[3].texCoords = sf::Vector2f(60, 190);  // Bottom-left texture coordinate
+    // Define the corresponding arbitrary shape in texture space
+    std::vector<sf::Vector2f> textureShape = {
+        {0, 0}, {mSize.x / 2, 0}, {mSize.x, mSize.y / 2}, { 0, mSize.y / 2 }  // Must match the structure of screenShape
+    };
+
+    // Triangulate and generate vertex array
+    sf::VertexArray triangles = triangulate(screenShape, textureShape);
 
     while (window.isOpen()) {
         sf::Event event;
@@ -40,15 +45,24 @@ int main()
 
         window.clear();
 
-        // Draw the quad with the texture
+        for (auto& pointScreen : screenShape)
+        {
+            sf::CircleShape point(4);
+            point.setPosition(pointScreen.x, pointScreen.y);
+            point.setFillColor(sf::Color::Green);
+            point.setOrigin(2, 2);
+            window.draw(point);
+        }
+
+        // Render the triangulated polygon
         sf::RenderStates states;
-        states.texture = &texture;  // Apply the texture
-        window.draw(quad, states);
+        states.texture = &texture;
+        window.draw(triangles, states);
+        //window.draw(sprite);
 
         window.display();
     }
     */
-
 
     return 0;
 }

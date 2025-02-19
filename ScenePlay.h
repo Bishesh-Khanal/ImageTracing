@@ -41,6 +41,7 @@ private:
 	Intersect intersection(const Vec2&, const Vec2&);
 	Intersect checkIntersectionTarget(const Vec2&, const std::vector<Vec2>&) const;
 	Vec2 increament(float, const Vec2&, const Vec2&);
+	sf::VertexArray triangulate(std::vector<Vec2>&, std::vector<Vec2>&);
 
 public:
 	ScenePlay(std::shared_ptr<GameEngine>);
