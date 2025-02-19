@@ -1,5 +1,25 @@
 #include "GameEngine.h"
 
+/*
+sf::VertexArray triangulate(std::vector<sf::Vector2f>& shape, std::vector<sf::Vector2f>& texCoords) {
+    sf::VertexArray triangles(sf::Triangles);
+
+    if (shape.size() < 3 || texCoords.size() < 3 || shape.size() != texCoords.size()) {
+        std::cerr << "Invalid shape or texture mapping!" << std::endl;
+        return triangles;
+    }
+
+    // Convert polygon into triangles (Assuming convex shape)
+    for (size_t i = 1; i < shape.size() - 1; i++) {
+        triangles.append(sf::Vertex(shape[0], texCoords[0])); // First vertex (anchor)
+        triangles.append(sf::Vertex(shape[i], texCoords[i])); // Current vertex
+        triangles.append(sf::Vertex(shape[i+1], texCoords[i+1])); // Next vertex
+    }
+
+    return triangles;
+}
+*/
+
 int main()
 {
     
@@ -12,7 +32,7 @@ int main()
 
     // Load the texture
     sf::Texture texture;
-    if (!texture.loadFromFile("bin/Images/pokemon2.png")) {
+    if (!texture.loadFromFile("bin/Images/first.png")) {
         std::cerr << "Error: Could not load texture!" << std::endl;
         return -1;
     }
