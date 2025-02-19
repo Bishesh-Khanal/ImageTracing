@@ -27,6 +27,6 @@ public:
 	const std::string& getName() const;
 	const Vec2& getSize() const;
 	sf::Sprite& getSprite();
-	void update();
+	void update(int);
 	bool hasEnded() const;
 };

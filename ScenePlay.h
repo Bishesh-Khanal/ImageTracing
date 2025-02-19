@@ -17,8 +17,13 @@ private:
 	{
 		bool result;
 		Vec2 pos;
+		std::vector<Vec2> intersections;
 	};
 	std::vector<Vec2> m_IntersectedPoints;
+	std::vector<Vec2> m_VerticesTarget;
+	std::vector<Vec2> m_TexturePoints;
+
+	std::shared_ptr<Entity> target;
 
 
 	void init();
@@ -31,7 +36,10 @@ private:
 	void sAnimation();
 
 	void enemySpawner(std::vector<std::vector<int>>, const sf::Color&);
+	void addInterSectionPoints(const Vec2&, const Vec2&);
+	void checkVerticesTarget(const Vec2&);
 	Intersect intersection(const Vec2&, const Vec2&);
+	Intersect checkIntersectionTarget(const Vec2&, const std::vector<Vec2>&) const;
 	Vec2 increament(float, const Vec2&, const Vec2&);
 
 public:

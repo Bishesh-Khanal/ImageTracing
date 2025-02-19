@@ -21,12 +21,12 @@ Animation::Animation(const std::string& name, const sf::Texture& texture, size_t
 	m_sprite.setOrigin(m_size.x / 2.0f, m_size.y / 2.0f);
 }
 
-void Animation::update()
+void Animation::update(int section)
 {
 	if (m_animationSpeed != 0 && m_frameCount > 0)
 	{
 		m_gameFrame++;
-		m_animFrame = (m_gameFrame / m_animationSpeed) % m_frameCount;
+		m_animFrame = section;
 		m_rectangle = sf::IntRect(static_cast<int>(std::floor(m_animFrame) * m_size.x), 0, m_size.x, m_size.y);
 		m_sprite.setTextureRect(m_rectangle);
 	}

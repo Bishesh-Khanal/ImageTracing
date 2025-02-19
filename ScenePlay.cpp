@@ -20,10 +20,22 @@ void ScenePlay::init()
 	pos = { { 1350, 100 }, { 1700, 110 }, { 1870,390 }, { 1680, 400 }, { 1550, 350 } };
 	enemySpawner(pos, sf::Color(192, 192, 192));
 
-	auto target = m_entities.addEntity("target");
+	target = m_entities.addEntity("target");
 	target->addComponent<CAnimation>(m_game->getAssets().getAnimation("Pokemon"), false);
-	target->addComponent<CTransform>(Vec2(500, 500));
-	target->addComponent<CBoundingBox>(Vec2(target->getComponent<CAnimation>().animation.getSize().x, target->getComponent<CAnimation>().animation.getSize().y), sf::Color::Black);
+	target->addComponent<CTransform>(Vec2(500, 600));
+	target->addComponent<CBoundingBox>(Vec2(target->getComponent<CAnimation>().animation.getSize().x, target->getComponent<CAnimation>().animation.getSize().y), sf::Color::Red);
+
+	target->getComponent<CAnimation>().animation.m_sprite.setPosition(target->getComponent<CTransform>().pos.x, target->getComponent<CTransform>().pos.y);
+	target->getComponent<CBoundingBox>().rectangle.setPosition(target->getComponent<CTransform>().pos.x, target->getComponent<CTransform>().pos.y);
+
+	auto& boundComponent = target->getComponent<CBoundingBox>();
+
+	Vec2 topLeft(boundComponent.rectangle.getPosition().x - boundComponent.halfSize.x, boundComponent.rectangle.getPosition().y - boundComponent.halfSize.y);
+	Vec2 topRight(boundComponent.rectangle.getPosition().x + boundComponent.halfSize.x, boundComponent.rectangle.getPosition().y - boundComponent.halfSize.y);
+	Vec2 bottomRight(boundComponent.rectangle.getPosition().x + boundComponent.halfSize.x, boundComponent.rectangle.getPosition().y + boundComponent.halfSize.y);
+	Vec2 bottomLeft(boundComponent.rectangle.getPosition().x - boundComponent.halfSize.x, boundComponent.rectangle.getPosition().y + boundComponent.halfSize.y);
+
+	m_VerticesTarget = { topLeft,  topRight, bottomRight, bottomLeft };
 }
 
 void ScenePlay::enemySpawner(std::vector<std::vector<int>> pos, const sf::Color& color)
@@ -31,8 +43,6 @@ void ScenePlay::enemySpawner(std::vector<std::vector<int>> pos, const sf::Color&
 	auto entity = m_entities.addEntity("enemy");
 
 	entity->addComponent<CShape>(pos.size(), pos, color);
-
-	//m_player = entity;
 }
 
 
@@ -47,11 +57,7 @@ void ScenePlay::sAnimation()
 
 	for (auto& entity : m_entities.getEntities("target"))
 	{
-		entity->getComponent<CAnimation>().animation.update();
-		if (entity->getComponent<CAnimation>().animation.hasEnded() && entity->getComponent<CAnimation>().destroy)
-		{
-			entity->destroy();
-		}
+		entity->getComponent<CAnimation>().animation.update(1);
 	}
 }
 
@@ -92,7 +98,6 @@ ScenePlay::Intersect ScenePlay::intersection(const Vec2& a, const Vec2& b)
 	Vec2 c, d;
 
 	std::vector<Vec2> intersectionPoints(0);
-
 	for (auto& entity : m_entities.getEntities("enemy"))
 	{
 		auto& shapeComponent = entity->getComponent<CShape>();
@@ -138,9 +143,42 @@ ScenePlay::Intersect ScenePlay::intersection(const Vec2& a, const Vec2& b)
 				break;
 			}
 		}
-		return { true, intersectionPoints[0] };
+		return { true, intersectionPoints[0], {}};
 	}
-	return { false, Vec2(0, 0) };
+	return { false, Vec2(0, 0), {} };
+}
+
+ScenePlay::Intersect ScenePlay::checkIntersectionTarget( const Vec2& intersectedPoint, const std::vector<Vec2>& verticesTarget) const
+{
+	Vec2 r = intersectedPoint - m_mPos;
+	Vec2 c, d;
+	std::vector<Vec2> intersectionPointsTarget(0);
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		c = verticesTarget[i];
+		d = verticesTarget[(i + 1) % 4];
+		Vec2 s = d - c;
+		float rxs = r.x * s.y - r.y * s.x;
+
+		if (rxs == 0) continue; // Parallel lines
+
+		Vec2 cma = c - m_mPos;
+		float t = (cma.x * s.y - cma.y * s.x) / rxs;
+		float u = (cma.x * r.y - cma.y * r.x) / rxs;
+		if ((t > 0 && t < 1) && (u > 0 && u < 1))
+		{
+			intersectionPointsTarget.push_back(Vec2(m_mPos.x + t * r.x, m_mPos.y + t * r.y));
+		}
+	}
+	if (intersectionPointsTarget.size() != 0)
+	{
+		return { true, Vec2{0,0}, intersectionPointsTarget };
+	}
+	else
+	{
+		return { false, Vec2{0,0}, {} };
+	}
 }
 
 Vec2 ScenePlay::increament(float angle, const Vec2& mousePos, const Vec2& position)
@@ -159,6 +197,28 @@ Vec2 ScenePlay::increament(float angle, const Vec2& mousePos, const Vec2& positi
 	}
 	else {
 		return intersectResult.pos;
+	}
+}
+
+void ScenePlay::addInterSectionPoints(const Vec2& vertex, const Vec2& neighbour)
+{
+	if (vertex.distq(m_mPos) <= target->getComponent<CTransform>().pos.distq(m_mPos))
+	{
+		if (checkIntersectionTarget(neighbour, m_VerticesTarget).result)
+		{
+			for (auto& pointTarget : checkIntersectionTarget(neighbour, m_VerticesTarget).intersections)
+			{
+				m_TexturePoints.emplace_back(pointTarget);
+			}
+		}
+	}
+}
+
+void ScenePlay::checkVerticesTarget(const Vec2& vertix)
+{
+	if (!intersection(m_mPos, vertix).result)
+	{
+		m_TexturePoints.emplace_back(vertix);
 	}
 }
 
@@ -195,8 +255,12 @@ void ScenePlay::sRender()
 				Vec2 neighbour(increament(vertexAngle - 0.000349, mousePos, mousePos));
 				m_IntersectedPoints.emplace_back(neighbour);
 
+				addInterSectionPoints(vertex, neighbour);
+
 				neighbour = increament(vertexAngle + 0.000349, mousePos, mousePos);
 				m_IntersectedPoints.emplace_back(neighbour);
+
+				addInterSectionPoints(vertex, neighbour);
 			}
 			else
 			{
@@ -211,10 +275,12 @@ void ScenePlay::sRender()
 		[&](const Vec2& a, const Vec2& b) {
 			return a.angle(mousePos) < b.angle(mousePos);
 		});
-
+	
 	sf::ConvexShape triangle;
 	triangle.setPointCount(3);
 	triangle.setFillColor(sf::Color::White);
+
+	size = m_IntersectedPoints.size();
 
 	for (size_t k = 0; k < size; ++k)
 	{
@@ -224,21 +290,31 @@ void ScenePlay::sRender()
 		m_game->m_window.draw(triangle);
 	}
 
-	m_IntersectedPoints.clear();
+	m_game->m_window.draw(target->getComponent<CAnimation>().animation.m_sprite);
+	m_game->m_window.draw(target->getComponent<CBoundingBox>().rectangle);
 
+	checkVerticesTarget(m_VerticesTarget[0]);
+	checkVerticesTarget(m_VerticesTarget[1]);
+	checkVerticesTarget(m_VerticesTarget[2]);
+	checkVerticesTarget(m_VerticesTarget[3]);
+
+	for (auto& vertixTexture : m_TexturePoints)
+	{
+		sf::CircleShape pointIndicator(4);
+		pointIndicator.setPosition(vertixTexture.x, vertixTexture.y);
+		pointIndicator.setFillColor(sf::Color::Green);
+		pointIndicator.setOrigin(2, 2);
+		m_game->m_window.draw(pointIndicator);
+	}
+
+	m_IntersectedPoints.clear();
+	m_TexturePoints.clear();
 
 	m_mShape.setFillColor(sf::Color::Red);
 	m_mShape.setRadius(10);
 	m_mShape.setOrigin(5, 5);
-
 	m_mShape.setPosition(m_mPos.x, m_mPos.y);
 	m_game->m_window.draw(m_mShape);
-
-	for (auto& e : m_entities.getEntities("target"))
-	{
-		e->getComponent<CAnimation>().animation.m_sprite.setPosition(e->getComponent<CTransform>().pos.x, e->getComponent<CTransform>().pos.y);
-		m_game->m_window.draw(e->getComponent<CAnimation>().animation.m_sprite);
-	}
 
 	m_game->m_window.display();
 }
