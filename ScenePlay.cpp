@@ -275,7 +275,7 @@ void ScenePlay::sRender()
 		[&](const Vec2& a, const Vec2& b) {
 			return a.angle(mousePos) < b.angle(mousePos);
 		});
-	
+
 	sf::ConvexShape triangle;
 	triangle.setPointCount(3);
 	triangle.setFillColor(sf::Color::White);
@@ -298,17 +298,42 @@ void ScenePlay::sRender()
 	checkVerticesTarget(m_VerticesTarget[2]);
 	checkVerticesTarget(m_VerticesTarget[3]);
 
-	for (auto& vertixTexture : m_TexturePoints)
+	if(m_TexturePoints.size() != 0)
 	{
-		sf::CircleShape pointIndicator(4);
-		pointIndicator.setPosition(vertixTexture.x, vertixTexture.y);
-		pointIndicator.setFillColor(sf::Color::Green);
-		pointIndicator.setOrigin(2, 2);
-		m_game->m_window.draw(pointIndicator);
+		float min;
+		int temp = -1;
+		for (size_t i = 1; i < m_TexturePoints.size() - 1; i++)
+		{
+			min = std::numeric_limits<float>::max();
+			for (size_t j = i + 1; j < m_TexturePoints.size(); j++)
+			{
+				float dist = m_TexturePoints[j].distq(m_TexturePoints[i]);
+				if (dist < min)
+				{
+					min = dist;
+					temp = j;
+				}
+			}
+			if (temp != -1)
+			{
+				std::swap(m_TexturePoints[i + 1], m_TexturePoints[temp]);
+			}
+		}
+
+		float i = 4;
+		for (auto& vertixTexture : m_TexturePoints)
+		{
+			sf::CircleShape pointIndicator(i);
+			pointIndicator.setPosition(vertixTexture.x, vertixTexture.y);
+			pointIndicator.setFillColor(sf::Color::Green);
+			pointIndicator.setOrigin(i / 2, i / 2);
+			m_game->m_window.draw(pointIndicator);
+			i *= 1.5;
+		}
+		m_TexturePoints.clear();
 	}
 
 	m_IntersectedPoints.clear();
-	m_TexturePoints.clear();
 
 	m_mShape.setFillColor(sf::Color::Red);
 	m_mShape.setRadius(10);
