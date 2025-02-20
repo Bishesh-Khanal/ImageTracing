@@ -20,15 +20,43 @@ void ScenePlay::init()
 	pos = { { 1350, 100 }, { 1700, 110 }, { 1870,390 }, { 1680, 400 }, { 1550, 350 } };
 	enemySpawner(pos, sf::Color(192, 192, 192));
 
-	auto target1 = m_entities.addEntity("target");
-	target1->addComponent<CAnimation>(m_game->getAssets().getAnimation("Circle"), false);
-	target1->addComponent<CTransform>(Vec2(550, 600));
-	target1->addComponent<CBoundingBox>(Vec2(target1->getComponent<CAnimation>().animation.getSize().x, target1->getComponent<CAnimation>().animation.getSize().y), target1->getComponent<CTransform>().pos, sf::Color::Red);
+	loadLevel("bin/level.txt");
+}
 
-	auto target2 = m_entities.addEntity("target");
-	target2->addComponent<CAnimation>(m_game->getAssets().getAnimation("Circle"), false);
-	target2->addComponent<CTransform>(Vec2(1500, 900));
-	target2->addComponent<CBoundingBox>(Vec2(target2->getComponent<CAnimation>().animation.getSize().x, target2->getComponent<CAnimation>().animation.getSize().y), target2->getComponent<CTransform>().pos, sf::Color::Red);
+void ScenePlay::loadLevel(const std::string& level_path)
+{
+	std::fstream myFiles(level_path);
+	if (!myFiles.is_open())
+	{
+		std::cerr << "Failed to open the file: " << level_path << std::endl;
+		return;
+	}
+
+	std::string line;
+	while (std::getline(myFiles, line))
+	{
+		if (line.empty())
+		{
+			continue;
+		}
+
+		std::istringstream lineStream(line);
+		std::string assetType, nameAsset;
+		float xPos, yPos;
+
+		if (lineStream >> assetType >> nameAsset >> xPos >> yPos)
+		{
+			auto target = m_entities.addEntity(assetType);
+			target->addComponent<CAnimation>(m_game->getAssets().getAnimation(nameAsset), false);
+			target->addComponent<CTransform>(Vec2(xPos, yPos));
+			target->addComponent<CBoundingBox>(Vec2(target->getComponent<CAnimation>().animation.getSize().x, target->getComponent<CAnimation>().animation.getSize().y), target->getComponent<CTransform>().pos, sf::Color::Red);
+
+		}
+		else
+		{
+			std::cerr << "Malformed line" << std::endl;
+		}
+	}
 }
 
 void ScenePlay::enemySpawner(std::vector<std::vector<int>> pos, const sf::Color& color)

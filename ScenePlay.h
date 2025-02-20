@@ -28,7 +28,7 @@ private:
 	void sRender()							override;
 	void sDoAction(const Action&)			override;
 
-
+	void loadLevel(const std::string&);
 	void enemySpawner(std::vector<std::vector<int>>, const sf::Color&);
 	void addInterSectionPoints(const Vec2&, const Vec2&);
 	void checkVerticesTarget(std::shared_ptr<Entity>, const Vec2&);
