@@ -85,17 +85,27 @@ public:
 	Vec2 halfSize = { 0.0f, 0.0f };
 	sf::Color boxColor;
 	sf::RectangleShape rectangle;
-
+	std::vector<Vec2>m_VerticesTarget;
+	
 	CBoundingBox()
 	{
 	}
 
-	CBoundingBox(const Vec2& bbox, const sf::Color& color = sf::Color::White, bool h = true)
+	CBoundingBox(const Vec2& bbox, const Vec2& position, const sf::Color& color = sf::Color::White, bool h = true)
 		: boundingbox(bbox)
 		, boxColor(color)
 		, halfSize(bbox / 2)
+		, m_VerticesTarget(4)
 	{
+		rectangle.setPosition(position.x, position.y);
+
+		m_VerticesTarget[0] = Vec2(position.x - halfSize.x, position.y - halfSize.y);
+		m_VerticesTarget[1] = Vec2(position.x + halfSize.x, position.y - halfSize.y);
+		m_VerticesTarget[2] = Vec2(position.x + halfSize.x, position.y + halfSize.y);
+		m_VerticesTarget[3] = Vec2(position.x - halfSize.x, position.y + halfSize.y);
+
 		has = h;
+
 		rectangle.setSize(sf::Vector2f(bbox.x, bbox.y));
 		rectangle.setFillColor(sf::Color::Transparent);
 		rectangle.setOutlineColor(sf::Color(boxColor));
@@ -107,7 +117,6 @@ public:
 class CAnimation : public Component
 {
 public:
-	bool has = false;
 	bool destroy = false;
 
 	Animation animation;
@@ -121,5 +130,24 @@ public:
 		, destroy(d)
 	{
 		has = h;
+	}
+};
+
+class CTexture : public Component
+{
+public :
+	std::vector<Vec2> m_TexturePoints;
+	std::vector<sf::Vector2f> screenShape;
+	std::vector<sf::Vector2f> textureShape;
+	sf::VertexArray triangles;
+	sf::RenderStates states;
+
+	CTexture()
+	{ }
+
+	CTexture(size_t s)
+		: screenShape(s)
+		, textureShape(s)
+	{
 	}
 };

@@ -20,21 +20,15 @@ void ScenePlay::init()
 	pos = { { 1350, 100 }, { 1700, 110 }, { 1870,390 }, { 1680, 400 }, { 1550, 350 } };
 	enemySpawner(pos, sf::Color(192, 192, 192));
 
-	target = m_entities.addEntity("target");
-	target->addComponent<CAnimation>(m_game->getAssets().getAnimation("First"), false);
-	target->addComponent<CTransform>(Vec2(550, 600));
-	target->addComponent<CBoundingBox>(Vec2(target->getComponent<CAnimation>().animation.getSize().x, target->getComponent<CAnimation>().animation.getSize().y), sf::Color::Red);
+	auto target1 = m_entities.addEntity("target");
+	target1->addComponent<CAnimation>(m_game->getAssets().getAnimation("Circle"), false);
+	target1->addComponent<CTransform>(Vec2(550, 600));
+	target1->addComponent<CBoundingBox>(Vec2(target1->getComponent<CAnimation>().animation.getSize().x, target1->getComponent<CAnimation>().animation.getSize().y), target1->getComponent<CTransform>().pos, sf::Color::Red);
 
-	target->getComponent<CBoundingBox>().rectangle.setPosition(target->getComponent<CTransform>().pos.x, target->getComponent<CTransform>().pos.y);
-
-	auto& boundComponent = target->getComponent<CBoundingBox>();
-
-	Vec2 topLeft(boundComponent.rectangle.getPosition().x - boundComponent.halfSize.x, boundComponent.rectangle.getPosition().y - boundComponent.halfSize.y);
-	Vec2 topRight(boundComponent.rectangle.getPosition().x + boundComponent.halfSize.x, boundComponent.rectangle.getPosition().y - boundComponent.halfSize.y);
-	Vec2 bottomRight(boundComponent.rectangle.getPosition().x + boundComponent.halfSize.x, boundComponent.rectangle.getPosition().y + boundComponent.halfSize.y);
-	Vec2 bottomLeft(boundComponent.rectangle.getPosition().x - boundComponent.halfSize.x, boundComponent.rectangle.getPosition().y + boundComponent.halfSize.y);
-
-	m_VerticesTarget = { topLeft,  topRight, bottomRight, bottomLeft };
+	auto target2 = m_entities.addEntity("target");
+	target2->addComponent<CAnimation>(m_game->getAssets().getAnimation("Circle"), false);
+	target2->addComponent<CTransform>(Vec2(1500, 900));
+	target2->addComponent<CBoundingBox>(Vec2(target2->getComponent<CAnimation>().animation.getSize().x, target2->getComponent<CAnimation>().animation.getSize().y), target2->getComponent<CTransform>().pos, sf::Color::Red);
 }
 
 void ScenePlay::enemySpawner(std::vector<std::vector<int>> pos, const sf::Color& color)
@@ -49,11 +43,6 @@ ScenePlay::ScenePlay(std::shared_ptr<GameEngine> game)
 	: Scene(std::move(game))
 {
 	init();
-}
-
-void ScenePlay::sAnimation()
-{
-	target->getComponent<CAnimation>().animation.update(1);
 }
 
 void ScenePlay::sDoAction(const Action& action)
@@ -74,7 +63,6 @@ void ScenePlay::sDoAction(const Action& action)
 
 void ScenePlay::update() {
 	m_entities.update();
-	//sAnimation();
 }
 
 
@@ -98,7 +86,7 @@ ScenePlay::Intersect ScenePlay::intersection(const Vec2& a, const Vec2& b)
 		auto& shapeComponent = entity->getComponent<CShape>();
 		auto& convexShape = shapeComponent.convex;
 
-		if (shapeComponent.size <= 0) continue; // Safety check
+		if (shapeComponent.size <= 0) continue;
 
 		for (int i = 0; i < shapeComponent.size; i++)
 		{
@@ -107,7 +95,7 @@ ScenePlay::Intersect ScenePlay::intersection(const Vec2& a, const Vec2& b)
 			Vec2 s = d - c;
 			float rxs = r.x * s.y - r.y * s.x;
 
-			if (rxs == 0) continue; // Parallel lines
+			if (rxs == 0) continue;
 
 			Vec2 cma = c - a;
 			float t = (cma.x * s.y - cma.y * s.x) / rxs;
@@ -156,7 +144,7 @@ ScenePlay::Intersect ScenePlay::checkIntersectionTarget( const Vec2& intersected
 		Vec2 s = d - c;
 		float rxs = r.x * s.y - r.y * s.x;
 
-		if (rxs == 0) continue; // Parallel lines
+		if (rxs == 0) continue;
 
 		Vec2 cma = c - m_mPos;
 		float t = (cma.x * s.y - cma.y * s.x) / rxs;
@@ -197,45 +185,28 @@ Vec2 ScenePlay::increament(float angle, const Vec2& mousePos, const Vec2& positi
 
 void ScenePlay::addInterSectionPoints(const Vec2& vertex, const Vec2& neighbour)
 {
-	if (vertex.distq(m_mPos) <= target->getComponent<CTransform>().pos.distq(m_mPos))
+	for(auto& target : m_entities.getEntities("target"))
 	{
-		if (checkIntersectionTarget(neighbour, m_VerticesTarget).result)
+		if (vertex.distq(m_mPos) <= target->getComponent<CTransform>().pos.distq(m_mPos))
 		{
-			for (auto& pointTarget : checkIntersectionTarget(neighbour, m_VerticesTarget).intersections)
+			if (checkIntersectionTarget(neighbour, target->getComponent<CBoundingBox>().m_VerticesTarget).result)
 			{
-				m_TexturePoints.emplace_back(pointTarget);
+				for (auto& pointTarget : checkIntersectionTarget(neighbour, target->getComponent<CBoundingBox>().m_VerticesTarget).intersections)
+				{
+					target->getComponent<CTexture>().m_TexturePoints.emplace_back(pointTarget);
+				}
 			}
 		}
 	}
 }
 
-void ScenePlay::checkVerticesTarget(const Vec2& vertix)
+void ScenePlay::checkVerticesTarget(std::shared_ptr<Entity> target, const Vec2& vertix)
 {
 	if (!intersection(m_mPos, vertix).result)
 	{
-		m_TexturePoints.emplace_back(vertix);
+		target->getComponent<CTexture>().m_TexturePoints.emplace_back(vertix);
 	}
 }
-
-/*
-sf::VertexArray ScenePlay::triangulate(std::vector<Vec2>& shape, std::vector<Vec2>& texCoords) {
-	sf::VertexArray triangles(sf::Triangles);
-
-	if (shape.size() < 3 || texCoords.size() < 3 || shape.size() != texCoords.size()) {
-		std::cerr << "Invalid shape or texture mapping!" << std::endl;
-		return triangles;
-	}
-
-	// Convert polygon into triangles (Assuming convex shape)
-	for (size_t i = 1; i < shape.size() - 1; i++) {
-		triangles.append(sf::Vertex(sf::Vector2f(shape[0].x, shape[0].y), sf::Vector2f(texCoords[0].x, texCoords[0].x))); // First vertex (anchor)
-		triangles.append(sf::Vertex(sf::Vector2f(shape[i].x, shape[i].y), sf::Vector2f(texCoords[i].x, texCoords[i].x))); // Current vertex
-		triangles.append(sf::Vertex(sf::Vector2f(shape[i+1].x, shape[i+1].y), sf::Vector2f(texCoords[i+1].x, texCoords[i+1].x))); // Next vertex
-	}
-
-	return triangles;
-}
-*/
 
 sf::VertexArray ScenePlay::triangulate(std::vector<sf::Vector2f>& shape, std::vector<sf::Vector2f>& texCoords) {
 	sf::VertexArray triangles(sf::Triangles);
@@ -245,11 +216,10 @@ sf::VertexArray ScenePlay::triangulate(std::vector<sf::Vector2f>& shape, std::ve
 		return triangles;
 	}
 
-	// Convert polygon into triangles (Assuming convex shape)
 	for (size_t i = 1; i < shape.size() - 1; i++) {
-		triangles.append(sf::Vertex(shape[0], texCoords[0])); // First vertex (anchor)
-		triangles.append(sf::Vertex(shape[i], texCoords[i])); // Current vertex
-		triangles.append(sf::Vertex(shape[i + 1], texCoords[i + 1])); // Next vertex
+		triangles.append(sf::Vertex(shape[0], texCoords[0]));
+		triangles.append(sf::Vertex(shape[i], texCoords[i]));
+		triangles.append(sf::Vertex(shape[i + 1], texCoords[i + 1]));
 	}
 
 	return triangles;
@@ -258,8 +228,6 @@ sf::VertexArray ScenePlay::triangulate(std::vector<sf::Vector2f>& shape, std::ve
 void ScenePlay::sRender()
 {
 	m_game->m_window.clear();
-
-	target->getComponent<CAnimation>().animation = m_game->getAssets().getAnimation("First");
 
 	Vec2 mousePos(m_mShape.getPosition().x, m_mShape.getPosition().y);
 
@@ -285,7 +253,6 @@ void ScenePlay::sRender()
 				float vertexAngle = vertex.angle(mousePos);
 
 				m_IntersectedPoints.emplace_back(vertex);
-				//m_game->m_window.draw(line, 2, sf::Lines);
 
 				Vec2 neighbour(increament(vertexAngle - 0.000349, mousePos, mousePos));
 				m_IntersectedPoints.emplace_back(neighbour);
@@ -325,54 +292,63 @@ void ScenePlay::sRender()
 		m_game->m_window.draw(triangle);
 	}
 
-	target->getComponent<CAnimation>().animation.getSprite().setPosition(target->getComponent<CTransform>().pos.x, target->getComponent<CTransform>().pos.y);
-	m_game->m_window.draw(target->getComponent<CAnimation>().animation.m_sprite);
-	//m_game->m_window.draw(target->getComponent<CBoundingBox>().rectangle);
-
-	checkVerticesTarget(m_VerticesTarget[0]);
-	checkVerticesTarget(m_VerticesTarget[1]);
-	checkVerticesTarget(m_VerticesTarget[2]);
-	checkVerticesTarget(m_VerticesTarget[3]);
-
-	if (m_TexturePoints.size() > 2)
+	for (auto& target : m_entities.getEntities("target"))
 	{
-		target->getComponent<CAnimation>().animation = m_game->getAssets().getAnimation("Second");
-		//target->getComponent<CAnimation>().animation.update(0);
-
-		std::sort(m_TexturePoints.begin(), m_TexturePoints.end(),
-			[&](const Vec2& a, const Vec2& b) {
-				return a.angle(target->getComponent<CTransform>().pos) < b.angle(target->getComponent<CTransform>().pos);
-			});
-		
-		/*
-		float i = 4;
-		for (auto& vertixTexture : m_TexturePoints)
-		{
-			sf::CircleShape pointIndicator(i);
-			pointIndicator.setPosition(vertixTexture.x, vertixTexture.y);
-			pointIndicator.setFillColor(sf::Color::Green);
-			pointIndicator.setOrigin(i / 2, i / 2);
-			m_game->m_window.draw(pointIndicator);
-			i *= 1.5;
-		}
-		*/
-
+		auto& animationComponent = target->getComponent<CAnimation>();
 		auto& boundComponent = target->getComponent<CBoundingBox>();
-		std::vector<sf::Vector2f> screenShape(m_TexturePoints.size());
-		std::vector<sf::Vector2f> textureShape(m_TexturePoints.size());
-		for (int i = 0; i < m_TexturePoints.size(); i++)
+		auto& textureComponent = target->getComponent<CTexture>();
+		auto& transformComponent = target->getComponent<CTransform>();
+
+		target->getComponent<CAnimation>().animation.update(0);
+
+		animationComponent.animation.getSprite().setPosition(transformComponent.pos.x, transformComponent.pos.y);
+		m_game->m_window.draw(animationComponent.animation.m_sprite);
+		//m_game->m_window.draw(boundComponent.rectangle);
+
+		checkVerticesTarget(target, boundComponent.m_VerticesTarget[0]);
+		checkVerticesTarget(target, boundComponent.m_VerticesTarget[1]);
+		checkVerticesTarget(target, boundComponent.m_VerticesTarget[2]);
+		checkVerticesTarget(target, boundComponent.m_VerticesTarget[3]);
+
+		if (textureComponent.m_TexturePoints.size() > 2)
 		{
-			screenShape[i] = sf::Vector2f(m_TexturePoints[i].x, m_TexturePoints[i].y);
-			textureShape[i] = sf::Vector2f(m_TexturePoints[i].x - (boundComponent.rectangle.getPosition().x - boundComponent.halfSize.x), m_TexturePoints[i].y - (boundComponent.rectangle.getPosition().y - boundComponent.halfSize.y));
+			target->getComponent<CAnimation>().animation.update(1);
+
+			std::sort(textureComponent.m_TexturePoints.begin(), textureComponent.m_TexturePoints.end(),
+				[&](const Vec2& a, const Vec2& b) {
+					return a.angle(transformComponent.pos) < b.angle(transformComponent.pos);
+				});
+
+			/*
+			float i = 4;
+			for (auto& vertixTexture : textureComponent.m_TexturePoints)
+			{
+				sf::CircleShape pointIndicator(i);
+				pointIndicator.setPosition(vertixTexture.x, vertixTexture.y);
+				pointIndicator.setFillColor(sf::Color::Green);
+				pointIndicator.setOrigin(i / 2, i / 2);
+				m_game->m_window.draw(pointIndicator);
+				i *= 1.5;
+			}
+			*/
+
+			for (int i = 0; i < textureComponent.m_TexturePoints.size(); i++)
+			{
+				textureComponent.screenShape.push_back(sf::Vector2f(textureComponent.m_TexturePoints[i].x, textureComponent.m_TexturePoints[i].y));
+				textureComponent.textureShape.push_back(sf::Vector2f(animationComponent.animation.getSize().x + textureComponent.m_TexturePoints[i].x - (boundComponent.rectangle.getPosition().x - boundComponent.halfSize.x), textureComponent.m_TexturePoints[i].y - (boundComponent.rectangle.getPosition().y - boundComponent.halfSize.y)));
+			}
+
+			textureComponent.triangles = triangulate(textureComponent.screenShape, textureComponent.textureShape);
+
+			textureComponent.states.texture = animationComponent.animation.getSprite().getTexture();
+			m_game->m_window.draw(textureComponent.triangles, textureComponent.states);
+
+			textureComponent.m_TexturePoints.clear();
+			textureComponent.states.Default;
+			textureComponent.screenShape.clear();
+			textureComponent.textureShape.clear();
+			textureComponent.triangles.clear();
 		}
-
-		sf::VertexArray triangles = triangulate(screenShape, textureShape);
-
-		sf::RenderStates states;
-		states.texture = target->getComponent<CAnimation>().animation.getSprite().getTexture();
-		m_game->m_window.draw(triangles, states);
-
-		m_TexturePoints.clear();
 	}
 
 	m_IntersectedPoints.clear();
@@ -385,11 +361,3 @@ void ScenePlay::sRender()
 
 	m_game->m_window.display();
 }
-
-/*
-	sf::CircleShape point(4);
-	point.setPosition(intersectionPoint.x, intersectionPoint.y);
-	point.setFillColor(sf::Color::Green);
-	point.setOrigin(2, 2);
-	m_game->m_window.draw(point);
-*/
