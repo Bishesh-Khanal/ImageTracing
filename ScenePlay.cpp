@@ -12,13 +12,13 @@ void ScenePlay::init()
 	pos = { { 0, 0 }, { 0, static_cast<int>(m_game->m_height) }, { static_cast<int>(m_game->m_width), static_cast<int>(m_game->m_height) }, { static_cast<int>(m_game->m_width), 0 } };
 	enemySpawner(pos, sf::Color::Black);
 	pos = { { 100, 100 }, { 450, 110 }, { 620,390 }, { 430, 400 }, { 300, 350 } };
-	enemySpawner(pos, sf::Color::White);
+	enemySpawner(pos, sf::Color(192, 192, 192));
 	pos = { { 600, 800 }, { 950, 810 }, { 1120,1090 }, { 930, 1100 }, { 800, 1050 } };
-	enemySpawner(pos, sf::Color::White);
+	enemySpawner(pos, sf::Color(192, 192, 192));
 	pos = { { 970, 400 }, { 1320, 410 }, { 1490,690 }, { 1300, 700 }, { 1170, 650 } };
-	enemySpawner(pos, sf::Color::White);
+	enemySpawner(pos, sf::Color(192, 192, 192));
 	pos = { { 1350, 100 }, { 1700, 110 }, { 1870,390 }, { 1680, 400 }, { 1550, 350 } };
-	enemySpawner(pos, sf::Color::White);
+	enemySpawner(pos, sf::Color(192, 192, 192));
 
 	target = m_entities.addEntity("target");
 	target->addComponent<CAnimation>(m_game->getAssets().getAnimation("First"), false);
@@ -313,7 +313,7 @@ void ScenePlay::sRender()
 
 	sf::ConvexShape triangle;
 	triangle.setPointCount(3);
-	triangle.setFillColor(sf::Color(192, 192, 192));
+	triangle.setFillColor(sf::Color::White);
 
 	size = m_IntersectedPoints.size();
 
@@ -338,26 +338,12 @@ void ScenePlay::sRender()
 	{
 		target->getComponent<CAnimation>().animation = m_game->getAssets().getAnimation("Second");
 		//target->getComponent<CAnimation>().animation.update(0);
-		float min;
-		int temp = -1;
-		for (size_t i = 1; i < m_TexturePoints.size() - 1; i++)
-		{
-			min = std::numeric_limits<float>::max();
-			for (size_t j = i + 1; j < m_TexturePoints.size(); j++)
-			{
-				float dist = m_TexturePoints[j].distq(m_TexturePoints[i]);
-				if (dist < min)
-				{
-					min = dist;
-					temp = j;
-				}
-			}
-			if (temp != -1)
-			{
-				std::swap(m_TexturePoints[i + 1], m_TexturePoints[temp]);
-			}
-		}
 
+		std::sort(m_TexturePoints.begin(), m_TexturePoints.end(),
+			[&](const Vec2& a, const Vec2& b) {
+				return a.angle(target->getComponent<CTransform>().pos) < b.angle(target->getComponent<CTransform>().pos);
+			});
+		
 		/*
 		float i = 4;
 		for (auto& vertixTexture : m_TexturePoints)
